@@ -22,7 +22,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".locationreminders.ReminderDescriptionActivity"></activity>
+        <activity android:name=".ReminderDescriptionActivity"></activity>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -37,7 +37,7 @@
 
         <activity android:name="app.filipebezerra.placetoremind.authentication.AuthenticationActivity">
         </activity>
-        <activity android:name=".locationreminders.RemindersActivity" >
+        <activity android:name=".RemindersActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -46,11 +46,11 @@
 
         </activity>
         <receiver
-            android:name=".locationreminders.geofence.GeofenceBroadcastReceiver"
+            android:name=".geofence.GeofenceBroadcastReceiver"
             android:enabled="true"
             android:exported="true" />
         <service
-            android:name=".locationreminders.geofence.GeofenceTransitionsJobIntentService"
+            android:name=".geofence.GeofenceTransitionsJobIntentService"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
     </application>

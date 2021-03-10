@@ -1,8 +1,9 @@
 package app.filipebezerra.placetoremind.base
 
 import androidx.databinding.ViewDataBinding
-import androidx.databinding.library.baseAdapters.BR
 import androidx.recyclerview.widget.RecyclerView
+import app.filipebezerra.placetoremind.BR
+
 
 /**
  * View Holder for the Recycler View to bind the data item to the UI

@@ -7,7 +7,7 @@
 
         <variable
             name="item"
-            type="app.filipebezerra.placetoremind.locationreminders.reminderslist.ReminderDataItem" />
+            type="app.filipebezerra.placetoremind.reminderslist.ReminderDataItem" />
     </data>
 
     <androidx.cardview.widget.CardView

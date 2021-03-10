@@ -7,7 +7,7 @@
 
         <variable
             name="viewModel"
-            type="app.filipebezerra.placetoremind.locationreminders.savereminder.SaveReminderViewModel" />
+            type="app.filipebezerra.placetoremind.savereminder.SaveReminderViewModel" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

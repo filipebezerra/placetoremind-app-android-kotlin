@@ -1,15 +1,16 @@
 package app.filipebezerra.placetoremind
 
 import android.app.Application
-import app.filipebezerra.placetoremind.locationreminders.data.ReminderDataSource
-import app.filipebezerra.placetoremind.locationreminders.data.local.LocalDB
-import app.filipebezerra.placetoremind.locationreminders.data.local.RemindersLocalRepository
-import app.filipebezerra.placetoremind.locationreminders.reminderslist.RemindersListViewModel
-import app.filipebezerra.placetoremind.locationreminders.savereminder.SaveReminderViewModel
+import app.filipebezerra.placetoremind.data.ReminderDataSource
+import app.filipebezerra.placetoremind.data.local.LocalDB
+import app.filipebezerra.placetoremind.data.local.RemindersLocalRepository
+import app.filipebezerra.placetoremind.reminderslist.RemindersListViewModel
+import app.filipebezerra.placetoremind.savereminder.SaveReminderViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
+
 
 class MyApp : Application() {
 

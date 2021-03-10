@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import app.filipebezerra.placetoremind.utils.SingleLiveEvent
 
+
 /**
  * Base class for View Models to declare the common LiveData objects in one place
  */
