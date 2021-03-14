@@ -2,7 +2,6 @@ package app.filipebezerra.placetoremind.base
 
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
 
@@ -18,20 +17,20 @@ abstract class BaseFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-        _viewModel.showErrorMessage.observe(this, Observer {
+        _viewModel.showErrorMessage.observe(viewLifecycleOwner) {
             Toast.makeText(activity, it, Toast.LENGTH_LONG).show()
-        })
-        _viewModel.showToast.observe(this, Observer {
+        }
+        _viewModel.showToast.observe(viewLifecycleOwner) {
             Toast.makeText(activity, it, Toast.LENGTH_LONG).show()
-        })
-        _viewModel.showSnackBar.observe(this, Observer {
+        }
+        _viewModel.showSnackBar.observe(viewLifecycleOwner) {
             Snackbar.make(this.view!!, it, Snackbar.LENGTH_LONG).show()
-        })
-        _viewModel.showSnackBarInt.observe(this, Observer {
+        }
+        _viewModel.showSnackBarInt.observe(viewLifecycleOwner) {
             Snackbar.make(this.view!!, getString(it), Snackbar.LENGTH_LONG).show()
-        })
+        }
 
-        _viewModel.navigationCommand.observe(this, Observer { command ->
+        _viewModel.navigationCommand.observe(viewLifecycleOwner) { command ->
             when (command) {
                 is NavigationCommand.To -> findNavController().navigate(command.directions)
                 is NavigationCommand.Back -> findNavController().popBackStack()
@@ -39,7 +38,13 @@ abstract class BaseFragment : Fragment() {
                     command.destinationId,
                     false
                 )
+                is NavigationCommand.ForResult -> with(command) {
+                    startActivityForResult(
+                        intent,
+                        requestCode
+                    )
+                }
             }
-        })
+        }
     }
 }

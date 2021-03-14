@@ -1,5 +1,6 @@
 package app.filipebezerra.placetoremind.base
 
+import android.content.Intent
 import androidx.navigation.NavDirections
 
 
@@ -11,6 +12,11 @@ sealed class NavigationCommand {
      * navigate to a direction
      */
     data class To(val directions: NavDirections) : NavigationCommand()
+
+    /**
+     * navigate to a an external Intent
+     */
+    data class ForResult(val intent: Intent, val requestCode: Int): NavigationCommand()
 
     /**
      * navigate back to the previous fragment
