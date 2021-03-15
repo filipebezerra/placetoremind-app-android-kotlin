@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="viewModel"
+            type="app.filipebezerra.placetoremind.addeditreminder.AddEditReminderViewModel"
+            />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/add_edit_reminder_root_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/white"
+        android:padding="@dimen/normal_spacing"
+        >
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/reminder_title_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="@string/reminder_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            >
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/reminder_title_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionNext"
+                android:inputType="text|textCapSentences"
+                android:text="@={viewModel.reminderTitle}"
+                />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/reminder_description_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="@string/reminder_desc"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/reminder_title_layout"
+            >
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/reminderDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:imeOptions="actionDone"
+                android:inputType="text|textCapSentences|textMultiLine"
+                android:lines="10"
+                android:text="@={viewModel.reminderDescription}"
+                />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/select_location_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:text="@string/reminder_location"
+            android:textColor="@color/black"
+            android:onClick="@{() -> viewModel.onSelectLocationClicked()}"
+            app:layout_constraintStart_toStartOf="parent"
+            app:drawableStartCompat="@drawable/ic_location"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/reminder_description_layout"
+            />
+
+        <TextView
+            android:id="@+id/selected_location_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/margin_normal"
+            android:text="@{viewModel.reminderSelectedLocationStr}"
+            android:textColor="@color/black"
+            app:layout_constraintBottom_toBottomOf="@id/select_location_text"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/select_location_text"
+            tools:text="Location"
+            />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/saveReminder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/margin_normal"
+            android:fadeVisible="@{!viewModel.showLoading.booleanValue()}"
+            android:src="@drawable/ic_save"
+            android:contentDescription="@string/save_your_reminder"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:onClick="@{() -> viewModel.onSaveReminderClicked()}"
+            app:layout_constraintEnd_toEndOf="parent"
+            />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:fadeVisible="@{viewModel.showLoading.booleanValue()}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

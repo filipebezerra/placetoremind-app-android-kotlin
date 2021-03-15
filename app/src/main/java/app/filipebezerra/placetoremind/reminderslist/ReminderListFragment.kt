@@ -5,6 +5,7 @@ import android.view.*
 import app.filipebezerra.placetoremind.R
 import app.filipebezerra.placetoremind.base.BaseFragment
 import app.filipebezerra.placetoremind.databinding.FragmentRemindersBinding
+import app.filipebezerra.placetoremind.databinding.FragmentRemindersBinding.inflate
 import app.filipebezerra.placetoremind.utils.setDisplayHomeAsUpEnabled
 import app.filipebezerra.placetoremind.utils.setTitle
 import app.filipebezerra.placetoremind.utils.setup
@@ -19,7 +20,7 @@ class ReminderListFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View = FragmentRemindersBinding.inflate(
+    ): View = inflate(
         inflater,
         container,
         false

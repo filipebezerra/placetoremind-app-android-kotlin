@@ -1,14 +1,12 @@
-package app.filipebezerra.placetoremind.savereminder.selectreminderlocation
+package app.filipebezerra.placetoremind.addeditreminder.selectreminderlocation
 
 import android.os.Bundle
 import android.view.*
 import androidx.databinding.DataBindingUtil
-import com.google.android.gms.location.*
-import com.google.android.gms.maps.model.*
 import app.filipebezerra.placetoremind.R
 import app.filipebezerra.placetoremind.base.BaseFragment
 import app.filipebezerra.placetoremind.databinding.FragmentSelectLocationBinding
-import app.filipebezerra.placetoremind.savereminder.SaveReminderViewModel
+import app.filipebezerra.placetoremind.addeditreminder.AddEditReminderViewModel
 import app.filipebezerra.placetoremind.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 
@@ -16,7 +14,7 @@ import org.koin.android.ext.android.inject
 class SelectLocationFragment : BaseFragment() {
 
     //Use Koin to get the view model of the SaveReminder
-    override val _viewModel: SaveReminderViewModel by inject()
+    override val _viewModel: AddEditReminderViewModel by inject()
     private lateinit var binding: FragmentSelectLocationBinding
 
     override fun onCreateView(

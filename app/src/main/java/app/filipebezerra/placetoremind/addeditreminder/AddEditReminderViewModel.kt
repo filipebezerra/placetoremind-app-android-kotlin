@@ -1,4 +1,4 @@
-package app.filipebezerra.placetoremind.savereminder
+package app.filipebezerra.placetoremind.addeditreminder
 
 import android.app.Application
 import androidx.lifecycle.MutableLiveData
@@ -11,10 +11,13 @@ import app.filipebezerra.placetoremind.data.ReminderDataSource
 import app.filipebezerra.placetoremind.data.dto.ReminderDTO
 import app.filipebezerra.placetoremind.reminderslist.ReminderDataItem
 import kotlinx.coroutines.launch
+import app.filipebezerra.placetoremind.addeditreminder.AddEditReminderFragmentDirections.Companion.actionAddEditReminderFragmentToSelectLocationFragment as selectLocationFragment
 
 
-class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSource) :
-    BaseViewModel(app) {
+class AddEditReminderViewModel(
+    val app: Application,
+    val dataSource: ReminderDataSource,
+) : BaseViewModel(app) {
     val reminderTitle = MutableLiveData<String>()
     val reminderDescription = MutableLiveData<String>()
     val reminderSelectedLocationStr = MutableLiveData<String>()
@@ -22,16 +25,27 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
     val latitude = MutableLiveData<Double>()
     val longitude = MutableLiveData<Double>()
 
-    /**
-     * Clear the live data objects to start fresh next time the view model gets called
-     */
-    fun onClear() {
-        reminderTitle.value = null
-        reminderDescription.value = null
-        reminderSelectedLocationStr.value = null
-        selectedPOI.value = null
-        latitude.value = null
-        longitude.value = null
+    fun onSaveReminderClicked() {
+        val title = reminderTitle.value
+        val description = reminderDescription.value
+        val location = reminderSelectedLocationStr.value
+        val latitude = latitude.value
+        val longitude = longitude.value
+
+//            TODO: use the user entered reminder details to:
+//             1) add a geofencing request
+//             2) save the reminder to the local db
+        ReminderDataItem(
+            title,
+            description,
+            location,
+            latitude,
+            longitude
+        ).run { validateAndSaveReminder(this) }
+    }
+
+    fun onSelectLocationClicked() {
+        navigationCommand.value = NavigationCommand.To(selectLocationFragment())
     }
 
     /**

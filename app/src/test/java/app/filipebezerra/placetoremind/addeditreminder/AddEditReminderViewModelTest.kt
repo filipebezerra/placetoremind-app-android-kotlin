@@ -1,4 +1,4 @@
-package app.filipebezerra.placetoremind.savereminder
+package app.filipebezerra.placetoremind.addeditreminder
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 
@@ -7,7 +7,7 @@ import org.junit.runner.RunWith
 
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
-class SaveReminderViewModelTest {
+class AddEditReminderViewModelTest {
 
 
     //TODO: provide testing to the SaveReminderView and its live data objects

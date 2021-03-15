@@ -13,30 +13,30 @@
         tools:layout="@layout/fragment_reminders"
         >
         <action
-            android:id="@+id/action_reminderListFragment_to_saveReminderFragment"
-            app:destination="@id/saveReminderFragment"
+            android:id="@+id/action_reminderListFragment_to_addEditReminderFragment"
+            app:destination="@id/addEditReminderFragment"
             />
     </fragment>
 
     <fragment
-        android:id="@+id/saveReminderFragment"
-        android:name="app.filipebezerra.placetoremind.savereminder.SaveReminderFragment"
+        android:id="@+id/addEditReminderFragment"
+        android:name="app.filipebezerra.placetoremind.addeditreminder.AddEditReminderFragment"
         android:label="Add Reminder"
-        tools:layout="@layout/fragment_save_reminder"
+        tools:layout="@layout/add_edit_reminder_fragment"
         >
         <action
-            android:id="@+id/action_saveReminderFragment_to_reminderListFragment"
+            android:id="@+id/action_addEditReminderFragment_to_reminderListFragment"
             app:destination="@id/reminderListFragment"
             />
         <action
-            android:id="@+id/action_saveReminderFragment_to_selectLocationFragment"
+            android:id="@+id/action_addEditReminderFragment_to_selectLocationFragment"
             app:destination="@id/selectLocationFragment"
             />
     </fragment>
 
     <fragment
         android:id="@+id/selectLocationFragment"
-        android:name="app.filipebezerra.placetoremind.savereminder.selectreminderlocation.SelectLocationFragment"
+        android:name="app.filipebezerra.placetoremind.addeditreminder.selectreminderlocation.SelectLocationFragment"
         android:label="Select Location"
         tools:layout="@layout/fragment_select_location"
         />

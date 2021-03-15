@@ -15,7 +15,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import app.filipebezerra.placetoremind.NavGraphDirections.Companion.globalActionAuthenticationFragment as authentication
-import app.filipebezerra.placetoremind.reminderslist.ReminderListFragmentDirections.Companion.actionReminderListFragmentToSaveReminderFragment as saveReminderFragment
+import app.filipebezerra.placetoremind.reminderslist.ReminderListFragmentDirections.Companion.actionReminderListFragmentToAddEditReminderFragment as addEditReminderFragment
 
 class RemindersListViewModel(
     app: Application,
@@ -68,7 +68,7 @@ class RemindersListViewModel(
     fun onAddReminderCliked() {
         auth.currentUser.takeIf { it != null }?.run {
             navigationCommand.postValue(
-                NavigationCommand.To(saveReminderFragment())
+                NavigationCommand.To(addEditReminderFragment())
             )
         } ?: run {
             navigateToAuthentication()

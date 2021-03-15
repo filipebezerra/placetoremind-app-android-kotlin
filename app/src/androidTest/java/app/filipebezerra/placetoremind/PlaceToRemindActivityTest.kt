@@ -8,7 +8,7 @@ import app.filipebezerra.placetoremind.data.ReminderDataSource
 import app.filipebezerra.placetoremind.data.local.LocalDB
 import app.filipebezerra.placetoremind.data.local.RemindersLocalRepository
 import app.filipebezerra.placetoremind.reminderslist.RemindersListViewModel
-import app.filipebezerra.placetoremind.savereminder.SaveReminderViewModel
+import app.filipebezerra.placetoremind.addeditreminder.AddEditReminderViewModel
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.runner.RunWith
@@ -45,7 +45,7 @@ class PlaceToRemindActivityTest :
                 )
             }
             single {
-                SaveReminderViewModel(
+                AddEditReminderViewModel(
                     appContext,
                     get() as ReminderDataSource
                 )
