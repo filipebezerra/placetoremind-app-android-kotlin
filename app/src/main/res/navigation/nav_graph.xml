@@ -38,7 +38,7 @@
         android:id="@+id/selectLocationFragment"
         android:name="app.filipebezerra.placetoremind.addeditreminder.selectreminderlocation.SelectLocationFragment"
         android:label="Select Location"
-        tools:layout="@layout/fragment_select_location"
+        tools:layout="@layout/select_location_fragment"
         />
 
     <fragment

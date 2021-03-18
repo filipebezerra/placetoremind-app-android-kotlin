@@ -1,7 +1,10 @@
 package app.filipebezerra.placetoremind.addeditreminder
 
 import android.app.Application
+import android.location.Address
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.PointOfInterest
 import app.filipebezerra.placetoremind.R
@@ -18,9 +21,13 @@ class AddEditReminderViewModel(
     val app: Application,
     val dataSource: ReminderDataSource,
 ) : BaseViewModel(app) {
+    private val selectedLocationAddress = MutableLiveData<Address>()
+
     val reminderTitle = MutableLiveData<String>()
     val reminderDescription = MutableLiveData<String>()
-    val reminderSelectedLocationStr = MutableLiveData<String>()
+    val reminderSelectedLocationStr: LiveData<String> = selectedLocationAddress.map {
+        it.getAddressLine(0)
+    }
     val selectedPOI = MutableLiveData<PointOfInterest>()
     val latitude = MutableLiveData<Double>()
     val longitude = MutableLiveData<Double>()
@@ -93,5 +100,9 @@ class AddEditReminderViewModel(
             return false
         }
         return true
+    }
+
+    fun selectLocation(locationAddress: Address) {
+        selectedLocationAddress.postValue(locationAddress)
     }
 }

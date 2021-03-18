@@ -1,71 +1,460 @@
 package app.filipebezerra.placetoremind.addeditreminder.selectreminderlocation
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.annotation.TargetApi
+import android.content.Intent
+import android.content.IntentSender
+import android.content.pm.PackageManager
+import android.content.res.Resources
+import android.location.Geocoder
+import android.location.Location
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Looper
+import android.provider.Settings
 import android.view.*
-import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
+import androidx.navigation.fragment.findNavController
+import app.filipebezerra.placetoremind.*
 import app.filipebezerra.placetoremind.R
-import app.filipebezerra.placetoremind.base.BaseFragment
-import app.filipebezerra.placetoremind.databinding.FragmentSelectLocationBinding
 import app.filipebezerra.placetoremind.addeditreminder.AddEditReminderViewModel
-import app.filipebezerra.placetoremind.utils.setDisplayHomeAsUpEnabled
+import app.filipebezerra.placetoremind.base.BaseFragment
+import app.filipebezerra.placetoremind.databinding.SelectLocationFragmentBinding
+import app.filipebezerra.placetoremind.utils.ext.*
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.*
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.GoogleMap.*
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.*
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
+import timber.log.Timber
+import java.io.IOException
 
 
 class SelectLocationFragment : BaseFragment() {
 
-    //Use Koin to get the view model of the SaveReminder
     override val _viewModel: AddEditReminderViewModel by inject()
-    private lateinit var binding: FragmentSelectLocationBinding
+
+    private lateinit var binding: SelectLocationFragmentBinding
+
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    private lateinit var googleMap: GoogleMap
+
+    private lateinit var currentLocation: Location
+
+    private var locationRequest: LocationRequest? = null
+
+    private var locationCallback: LocationCallback? = null
+
+    private var currentMarker: Marker? = null
+
+    private var currentGroundOverlay: GroundOverlay? = null
+
+    private val runningQOrLater = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+
+    private val navController: NavController by lazy { findNavController() }
+
+    private val mapReadyCallback = OnMapReadyCallback { map ->
+        Timber.d("Google map is ready")
+        googleMap = map
+        googleMap.apply {
+            mapType = GoogleMap.MAP_TYPE_SATELLITE
+            tryStyleMap()
+            setOnMapClickListener { latLng -> latLng.showInMap() }
+        }
+        showCurrentDeviceLocationOnMap()
+    }
+
+    private fun GoogleMap.tryStyleMap() {
+        // https://mapstyle.withgoogle.com
+        context?.let {
+            try {
+                setMapStyle(
+                    MapStyleOptions.loadRawResourceStyle(
+                        it,
+                        R.raw.map_style
+                    )
+                ).also { success ->
+                    if (!success) {
+                        Timber.e("Map style parsing failed")
+                    }
+                }
+            } catch (error: Resources.NotFoundException) {
+                Timber.e(error, "Can't find map style resource")
+            }
+        }
+    }
+
+    private fun LatLng.showInMap() {
+        if (currentMarker != null) {
+            currentMarker?.let { marker ->
+                Timber.d("Changing current marker to ${toString()}")
+                marker.position = this
+                marker.isInfoWindowShown.takeIf { it.not() }?.run { marker.showInfoWindow() }
+                createGroundOverlay()
+            }
+        } else {
+            Timber.d("Showing marker at ${toString()}")
+            googleMap.addMarker(
+                MarkerOptions().position(this)
+                    .title(getString(R.string.my_location))
+                    .snippet(getString(R.string.remind_me_here))
+                    .draggable(true)
+            ).apply {
+                showInfoWindow()
+                createGroundOverlay()
+            }.also { currentMarker = it }
+        }
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(this, 16F))
+    }
+
+    private fun LatLng.createGroundOverlay() {
+        if (currentGroundOverlay != null) {
+            currentGroundOverlay?.let { overlay ->
+                Timber.d("Changing current ground overlay to ${toString()}")
+                overlay.position = this
+            }
+        } else {
+            googleMap.addGroundOverlay(
+                GroundOverlayOptions()
+                    .image(resources.drawableAsBitmap(R.mipmap.ic_launcher)?.asBitmapDescriptor()!!)
+                    .position(this, 48f)
+            ).also { currentGroundOverlay = it }
+        }
+    }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View? {
-        binding =
-            DataBindingUtil.inflate(inflater, R.layout.fragment_select_location, container, false)
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View = SelectLocationFragmentBinding.inflate(inflater, container, false)
+        .apply {
+            binding = this
+            setHasOptionsMenu(true)
+        }
+        .root
 
-        binding.viewModel = _viewModel
-        binding.lifecycleOwner = this
-
-        setHasOptionsMenu(true)
-        setDisplayHomeAsUpEnabled(true)
-
-//        TODO: add the map setup implementation
-//        TODO: zoom to the user location after taking his permission
-//        TODO: add style to the map
-//        TODO: put a marker to location that the user selected
-
-
-//        TODO: call this function after the user confirms on the selected location
-        onLocationSelected()
-
-        return binding.root
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        (childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?)?.run {
+            this.getMapAsync(mapReadyCallback)
+        }
+        activity?.let { fragmentActivity ->
+            fusedLocationProviderClient =
+                LocationServices.getFusedLocationProviderClient(fragmentActivity)
+        }
     }
-
-    private fun onLocationSelected() {
-        //        TODO: When the user confirms on the selected location,
-        //         send back the selected location details to the view model
-        //         and navigate back to the previous fragment to save the reminder and add the geofence
-    }
-
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.map_options, menu)
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+//        menu.setGroupVisible(R.id., ::googleMap.isInitialized)
+        menu.findItem(R.id.normal_map).isEnabled = ::googleMap.isInitialized
+        menu.findItem(R.id.hybrid_map).isEnabled = ::googleMap.isInitialized
+        menu.findItem(R.id.satellite_map).isEnabled = ::googleMap.isInitialized
+        menu.findItem(R.id.terrain_map).isEnabled = ::googleMap.isInitialized
+    }
+
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
-        // TODO: Change the map type based on the user's selection.
-        R.id.normal_map -> {
-            true
-        }
-        R.id.hybrid_map -> {
-            true
-        }
-        R.id.satellite_map -> {
-            true
-        }
-        R.id.terrain_map -> {
+        R.id.normal_map,
+        R.id.hybrid_map,
+        R.id.satellite_map,
+        R.id.terrain_map,
+        -> {
+            with(item) {
+                itemId.takeIf { it == R.id.normal_map }?.let { googleMap.mapType = MAP_TYPE_NORMAL }
+                itemId.takeIf { it == R.id.hybrid_map }?.let { googleMap.mapType = MAP_TYPE_HYBRID }
+                itemId.takeIf { it == R.id.satellite_map }
+                    ?.let { googleMap.mapType = MAP_TYPE_SATELLITE }
+                itemId.takeIf { it == R.id.terrain_map }
+                    ?.let { googleMap.mapType = MAP_TYPE_TERRAIN }
+            }
             true
         }
         else -> super.onOptionsItemSelected(item)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        checkPermissionsAndStartShowingLocationOnMap()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopLocationUpdates()
+    }
+
+    /*
+ *  When we get the result from asking the user to turn on device location, we call
+ *  checkDeviceLocationSettingsAndStartShowingLocationOnMap() again to make sure it's actually on, but
+ *  we don't resolve the check to keep the user from seeing an endless loop.
+ */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when (requestCode) {
+            // We don't rely on the result code, but just check the location setting again
+            TURN_DEVICE_LOCATION_ON_REQUEST_CODE -> {
+                Timber.d("onActivityResult() resulted REQUEST_TURN_DEVICE_LOCATION_ON")
+                checkDeviceLocationSettingsAndStartShowingLocationOnMap()
+            }
+        }
+    }
+
+    /*
+     * In all cases, we need to have the location permission.
+     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        Timber.d(
+            "onRequestPermissionsResult() resulted %s for permissions %s",
+            grantResults.joinToString(
+                prefix = "[", postfix = "]"
+            ) {
+                if (it == PackageManager.PERMISSION_GRANTED) "GRANTED" else "DENIED"
+            },
+            permissions.joinToString(prefix = "[", postfix = "]")
+        )
+        grantResults.isLocationPermissionsGranted(requestCode)
+            .takeIf { it }?.run {
+                Timber.d("Location permission was granted")
+                checkDeviceLocationSettingsAndStartShowingLocationOnMap()
+            } ?: run {
+            Timber.d("Location permission was denied")
+            Snackbar.make(
+                binding.selectLocationRootLayout,
+                getString(R.string.permission_denied_explanation),
+                Snackbar.LENGTH_INDEFINITE
+            ).setAction(R.string.settings) {
+                startActivity(
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts(
+                            "package",
+                            BuildConfig.APPLICATION_ID,
+                            null
+                        )
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                )
+            }.show()
+        }
+    }
+
+    /**
+     * Starts the permission check and start showing the device location on the map.
+     */
+    private fun checkPermissionsAndStartShowingLocationOnMap() {
+        when (foregroundAndBackgroundLocationPermissionApproved()) {
+            true -> {
+                Timber.d("Checking location permission and it's already approved")
+                checkDeviceLocationSettingsAndStartShowingLocationOnMap()
+            }
+            false -> {
+                Timber.d("Checking location permission and isn't approved")
+                checkAndRequestForegroundAndBackgroundLocationPermissionsIfNeeded()
+            }
+        }
+    }
+
+    /*
+     *  Determines whether the app has the appropriate permissions across Android 10+ and all other
+     *  Android versions.
+     */
+    @TargetApi(29)
+    private fun foregroundAndBackgroundLocationPermissionApproved(): Boolean {
+        val foregroundLocationApproved =
+            context?.isThatPermissionGranted(Manifest.permission.ACCESS_FINE_LOCATION) ?: false
+        val backgroundLocationApproved = runningQOrLater.takeIf { it }?.run {
+            context?.isThatPermissionGranted(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        } ?: true
+        Timber.d("Foreground and background permissions are granted: %b",
+            "${foregroundLocationApproved && backgroundLocationApproved}")
+        return foregroundLocationApproved && backgroundLocationApproved
+    }
+
+    /*
+     *  Uses the Location Client to check the current state of location settings, and gives the user
+     *  the opportunity to turn on location services within our app.
+     */
+    private fun checkDeviceLocationSettingsAndStartShowingLocationOnMap(resolve: Boolean = true) {
+        activity?.let { fragmentActivity ->
+            createOrGetLocationRequest().let {
+                LocationSettingsRequest.Builder()
+                    .addLocationRequest(it)
+                    .build()
+            }.run {
+                LocationServices.getSettingsClient(fragmentActivity)
+                    .checkLocationSettings(this).apply {
+                        addOnFailureListener { exception ->
+                            Timber.d("Failed to check location settings")
+                            if (exception is ResolvableApiException && resolve) {
+                                Timber.d("Check location settings failure is resolvable")
+                                try {
+                                    exception.startResolutionForResult(
+                                        fragmentActivity,
+                                        TURN_DEVICE_LOCATION_ON_REQUEST_CODE
+                                    )
+                                } catch (sendException: IntentSender.SendIntentException) {
+                                    Timber.e(
+                                        sendException,
+                                        "Error getting location settings resolution"
+                                    )
+                                    Snackbar.make(
+                                        binding.selectLocationRootLayout,
+                                        R.string.fail_to_check_device_location_settings,
+                                        Snackbar.LENGTH_INDEFINITE
+                                    ).setAction(R.string.let_user_try_to_fix) {
+                                        startActivity(
+                                            Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                                        )
+                                    }.show()
+                                }
+                            } else {
+                                Timber.d("Check location settings failure couldn't be resolved")
+                                Snackbar.make(
+                                    binding.selectLocationRootLayout,
+                                    R.string.location_required_error,
+                                    Snackbar.LENGTH_INDEFINITE
+                                ).setAction(R.string.try_again) {
+                                    checkDeviceLocationSettingsAndStartShowingLocationOnMap()
+                                }.show()
+                            }
+                        }
+                        addOnSuccessListener {
+                            Timber.d("Succeed to check location settings")
+                            getCurrentDeviceLocation()
+                        }
+                    }
+            }
+        }
+    }
+
+    private fun createOrGetLocationRequest(): LocationRequest =
+        locationRequest ?: LocationRequest.create().apply {
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            interval = LOCATION_REQUEST_INTERVAL
+            fastestInterval = LOCATION_REQUEST_FASTEST_INTERVAL
+        }.also { locationRequest = it }
+
+    /*
+     *  Requests ACCESS_FINE_LOCATION and (on Android 10+ (Q) ACCESS_BACKGROUND_LOCATION.
+     */
+    private fun checkAndRequestForegroundAndBackgroundLocationPermissionsIfNeeded() {
+        if (foregroundAndBackgroundLocationPermissionApproved())
+            return
+        activity?.requestForegroundAndBackgroundLocationPermissions(runningQOrLater)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getCurrentDeviceLocation() {
+        if (
+            ::fusedLocationProviderClient.isInitialized && foregroundAndBackgroundLocationPermissionApproved()
+        ) {
+            fusedLocationProviderClient.lastLocation.addOnSuccessListener {
+                Timber.d("Succeed to get last location")
+                // Also checks accuracy/time of the last known location
+                if (it != null) {
+                    Timber.d("Last location was satisfied")
+                    currentLocation = it
+                    showCurrentDeviceLocationOnMap()
+                } else {
+                    Timber.d("No Last location known")
+                    startLocationUpdates()
+                }
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startLocationUpdates() {
+        if (::fusedLocationProviderClient.isInitialized) {
+            Timber.d("Requesting location updates")
+            fusedLocationProviderClient.requestLocationUpdates(
+                createOrGetLocationRequest(),
+                createOrGetLocationCallback(),
+                Looper.getMainLooper()
+            )
+        }
+    }
+
+    private fun createOrGetLocationCallback(): LocationCallback =
+        locationCallback ?: object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult?) {
+                if (locationResult != null && locationResult.lastLocation != null) {
+                    Timber.d("Succeed to get last location from location updates")
+                    stopLocationUpdates()
+                    currentLocation = locationResult.lastLocation
+                    showCurrentDeviceLocationOnMap()
+                } else {
+                    Timber.d("No Last location get from location updates")
+                }
+            }
+        }.also { locationCallback = it }
+
+    private fun stopLocationUpdates() {
+        if (locationCallback != null) {
+            Timber.d("Stopping requesting location updates")
+            fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+            locationCallback = null
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun showCurrentDeviceLocationOnMap() {
+        if (::googleMap.isInitialized) {
+            Timber.d("Google map is initialized")
+            googleMap.apply {
+                isMyLocationEnabled = true
+                if (::currentLocation.isInitialized) {
+                    Timber.d("Current location is initialized")
+                    currentLocation.toLatLng().let { latLng ->
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                            latLng,
+                            16F
+                        ))
+                        latLng.showInMap()
+                    }
+                    binding.selectLocationFab.setOnClickListener { onSelectLocationClicked() }
+                }
+                this@SelectLocationFragment.activity?.invalidateOptionsMenu()
+            }
+        }
+    }
+
+    private fun onSelectLocationClicked() {
+        currentMarker?.let { marker ->
+            val latLng = marker.position
+            lifecycleScope.launchWhenResumed {
+                withContext(Dispatchers.IO) {
+                    try {
+                        Geocoder(requireContext()).getFromLocation(
+                            latLng.latitude,
+                            latLng.longitude,
+                            1
+                        ).firstOrNull()?.let { address ->
+                            _viewModel.selectLocation(address)
+                            navController.popBackStack()
+                        }
+                    } catch (ioException: IOException) {
+                        Timber.e(ioException, "Calling Geocoder to get first address")
+                    }
+                }
+            }
+        }
     }
 }

@@ -5,6 +5,7 @@
 
     <data>
 
+        <import type="android.text.TextUtils" />
         <variable
             name="viewModel"
             type="app.filipebezerra.placetoremind.addeditreminder.AddEditReminderViewModel"
@@ -65,6 +66,7 @@
             android:id="@+id/select_location_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/smallest_spacing"
             android:background="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true"
@@ -74,19 +76,21 @@
             android:onClick="@{() -> viewModel.onSelectLocationClicked()}"
             app:layout_constraintStart_toStartOf="parent"
             app:drawableStartCompat="@drawable/ic_location"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/selected_location_text"
             app:layout_constraintTop_toBottomOf="@id/reminder_description_layout"
             />
 
         <TextView
             android:id="@+id/selected_location_text"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/margin_normal"
+            android:layout_marginStart="@dimen/smallest_spacing"
             android:text="@{viewModel.reminderSelectedLocationStr}"
             android:textColor="@color/black"
+            android:fadeVisible="@{!TextUtils.isEmpty(viewModel.reminderSelectedLocationStr)}"
             app:layout_constraintBottom_toBottomOf="@id/select_location_text"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/select_location_text"
             app:layout_constraintTop_toTopOf="@id/select_location_text"
             tools:text="Location"
             />
