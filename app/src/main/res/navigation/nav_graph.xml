@@ -8,9 +8,9 @@
 
     <fragment
         android:id="@+id/reminderListFragment"
-        android:name="app.filipebezerra.placetoremind.reminderslist.ReminderListFragment"
+        android:name="app.filipebezerra.placetoremind.reminders.ReminderListFragment"
         android:label="ReminderListFragment"
-        tools:layout="@layout/fragment_reminders"
+        tools:layout="@layout/reminders_fragment"
         >
         <action
             android:id="@+id/action_reminderListFragment_to_addEditReminderFragment"

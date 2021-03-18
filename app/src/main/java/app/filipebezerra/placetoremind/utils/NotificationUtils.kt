@@ -10,7 +10,7 @@ import androidx.core.app.TaskStackBuilder
 import app.filipebezerra.placetoremind.BuildConfig
 import app.filipebezerra.placetoremind.R
 import app.filipebezerra.placetoremind.ReminderDescriptionActivity
-import app.filipebezerra.placetoremind.reminderslist.ReminderDataItem
+import app.filipebezerra.placetoremind.reminders.ReminderDataItem
 
 
 private const val NOTIFICATION_CHANNEL_ID = BuildConfig.APPLICATION_ID + ".channel"

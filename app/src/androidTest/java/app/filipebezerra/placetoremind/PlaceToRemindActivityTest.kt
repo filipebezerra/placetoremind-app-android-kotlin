@@ -7,7 +7,7 @@ import androidx.test.filters.LargeTest
 import app.filipebezerra.placetoremind.data.ReminderDataSource
 import app.filipebezerra.placetoremind.data.local.LocalDB
 import app.filipebezerra.placetoremind.data.local.RemindersLocalRepository
-import app.filipebezerra.placetoremind.reminderslist.RemindersListViewModel
+import app.filipebezerra.placetoremind.reminders.RemindersListViewModel
 import app.filipebezerra.placetoremind.addeditreminder.AddEditReminderViewModel
 import kotlinx.coroutines.runBlocking
 import org.junit.Before

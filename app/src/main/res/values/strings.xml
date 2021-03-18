@@ -34,6 +34,13 @@
     <string name="welcome">Welcome</string>
     <string name="err_enter_title">Please enter title</string>
     <string name="err_select_location">Please select location</string>
+    <string name="let_user_try_to_fix">Let me try to fix</string>
+    <string name="try_again">Try again</string>
+    <string name="my_location">My location</string>
+    <string name="remind_me_here">Remind me here</string>
+    <string name="select_the_current_location">Select the current location</string>
+    <string name="save_your_reminder">Save your reminder</string>
+    <string name="reminder_item_location">At %s</string>
 
     <!-- Error strings -->
     <string name="geofence_unknown_error">Unknown error: the Geofence service is not available now.</string>
@@ -41,11 +48,6 @@
     <string name="geofence_too_many_geofences">Your app has registered too many geofences.</string>
     <string name="geofence_too_many_pending_intents">You have provided too many PendingIntents to the addGeofences() call.</string>
     <string name="error_adding_geofence">Error Happened, Can\'t Add Geofence</string>
-    <string name="save_your_reminder">Save your reminder</string>
     <string name="fail_to_check_device_location_settings">We Could not request change of location setting</string>
-    <string name="let_user_try_to_fix">Let me try to fix</string>
-    <string name="try_again">Try again</string>
-    <string name="my_location">My location</string>
-    <string name="remind_me_here">Remind me here</string>
-    <string name="select_the_current_location">Select the current location</string>
+
 </resources>

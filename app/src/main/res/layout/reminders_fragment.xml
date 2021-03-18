@@ -8,7 +8,7 @@
 
         <variable
             name="viewModel"
-            type="app.filipebezerra.placetoremind.reminderslist.RemindersListViewModel"
+            type="app.filipebezerra.placetoremind.reminders.RemindersListViewModel"
             />
     </data>
 
@@ -16,7 +16,7 @@
         android:id="@+id/refreshLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:context=".reminderslist.ReminderListFragment"
+        tools:context=".reminders.ReminderListFragment"
         >
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -34,6 +34,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
+                tools:listitem="@layout/reminder_list_item"
                 />
 
             <TextView

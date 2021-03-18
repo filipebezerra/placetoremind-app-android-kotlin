@@ -7,7 +7,7 @@
         <!--Data item that holds the reminder details-->
         <variable
             name="reminderDataItem"
-            type="app.filipebezerra.placetoremind.reminderslist.ReminderDataItem" />
+            type="app.filipebezerra.placetoremind.reminders.ReminderDataItem" />
     </data>
 
     <LinearLayout

@@ -1,4 +1,4 @@
-package app.filipebezerra.placetoremind.reminderslist
+package app.filipebezerra.placetoremind.reminders
 
 import java.io.Serializable
 import java.util.*

@@ -7,7 +7,7 @@ import com.google.android.gms.location.Geofence
 import app.filipebezerra.placetoremind.data.dto.ReminderDTO
 import app.filipebezerra.placetoremind.data.local.RemindersLocalRepository
 import app.filipebezerra.placetoremind.data.dto.Result
-import app.filipebezerra.placetoremind.reminderslist.ReminderDataItem
+import app.filipebezerra.placetoremind.reminders.ReminderDataItem
 import app.filipebezerra.placetoremind.utils.sendNotification
 import kotlinx.coroutines.*
 import org.koin.android.ext.android.inject

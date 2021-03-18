@@ -12,7 +12,7 @@ import app.filipebezerra.placetoremind.base.BaseViewModel
 import app.filipebezerra.placetoremind.base.NavigationCommand
 import app.filipebezerra.placetoremind.data.ReminderDataSource
 import app.filipebezerra.placetoremind.data.dto.ReminderDTO
-import app.filipebezerra.placetoremind.reminderslist.ReminderDataItem
+import app.filipebezerra.placetoremind.reminders.ReminderDataItem
 import kotlinx.coroutines.launch
 import app.filipebezerra.placetoremind.addeditreminder.AddEditReminderFragmentDirections.Companion.actionAddEditReminderFragmentToSelectLocationFragment as selectLocationFragment
 

@@ -1,11 +1,11 @@
-package app.filipebezerra.placetoremind.reminderslist
+package app.filipebezerra.placetoremind.reminders
 
 import android.os.Bundle
 import android.view.*
 import app.filipebezerra.placetoremind.R
 import app.filipebezerra.placetoremind.base.BaseFragment
-import app.filipebezerra.placetoremind.databinding.FragmentRemindersBinding
-import app.filipebezerra.placetoremind.databinding.FragmentRemindersBinding.inflate
+import app.filipebezerra.placetoremind.databinding.RemindersFragmentBinding
+import app.filipebezerra.placetoremind.databinding.RemindersFragmentBinding.inflate
 import app.filipebezerra.placetoremind.utils.setDisplayHomeAsUpEnabled
 import app.filipebezerra.placetoremind.utils.setTitle
 import app.filipebezerra.placetoremind.utils.setup
@@ -15,7 +15,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class ReminderListFragment : BaseFragment() {
     override val _viewModel: RemindersListViewModel by viewModel()
 
-    private lateinit var binding: FragmentRemindersBinding
+    private lateinit var binding: RemindersFragmentBinding
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

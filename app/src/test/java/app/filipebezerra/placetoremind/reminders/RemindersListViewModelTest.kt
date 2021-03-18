@@ -1,4 +1,4 @@
-package app.filipebezerra.placetoremind.reminderslist
+package app.filipebezerra.placetoremind.reminders
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.ExperimentalCoroutinesApi

@@ -6,7 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import app.filipebezerra.placetoremind.databinding.ActivityReminderDescriptionBinding
-import app.filipebezerra.placetoremind.reminderslist.ReminderDataItem
+import app.filipebezerra.placetoremind.reminders.ReminderDataItem
 
 
 /**

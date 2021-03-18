@@ -1,4 +1,4 @@
-package app.filipebezerra.placetoremind.reminderslist
+package app.filipebezerra.placetoremind.reminders
 
 import android.app.Application
 import android.view.Menu
@@ -15,7 +15,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import app.filipebezerra.placetoremind.NavGraphDirections.Companion.globalActionAuthenticationFragment as authentication
-import app.filipebezerra.placetoremind.reminderslist.ReminderListFragmentDirections.Companion.actionReminderListFragmentToAddEditReminderFragment as addEditReminderFragment
+import app.filipebezerra.placetoremind.reminders.ReminderListFragmentDirections.Companion.actionReminderListFragmentToAddEditReminderFragment as addEditReminderFragment
 
 class RemindersListViewModel(
     app: Application,
