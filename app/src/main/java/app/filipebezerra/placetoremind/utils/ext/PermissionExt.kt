@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import app.filipebezerra.placetoremind.BACKGROUND_LOCATION_PERMISSION_INDEX
 import app.filipebezerra.placetoremind.LOCATION_PERMISSION_INDEX
 import app.filipebezerra.placetoremind.FOREGROUND_AND_BACKGROUND_PERMISSION_REQUEST_CODE
@@ -33,7 +34,7 @@ fun IntArray.isBackgroundLocationPermissionGrantedIfRequested(requestCodeReceive
     } ?: true
 
 @TargetApi(29)
-fun Activity.requestForegroundAndBackgroundLocationPermissions(runningQOrLater: Boolean) {
+fun Fragment.requestForegroundAndBackgroundLocationPermissions(runningQOrLater: Boolean) {
     var permissionsArray = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     val requestCode = when {
         runningQOrLater -> {
@@ -46,8 +47,7 @@ fun Activity.requestForegroundAndBackgroundLocationPermissions(runningQOrLater: 
             FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
         }
     }
-    ActivityCompat.requestPermissions(
-        this,
+    requestPermissions(
         permissionsArray,
         requestCode
     )

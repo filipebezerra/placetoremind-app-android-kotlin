@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.*
 import androidx.lifecycle.lifecycleScope
@@ -63,6 +64,8 @@ class SelectLocationFragment : BaseFragment() {
     private val runningQOrLater = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
     private val navController: NavController by lazy { findNavController() }
+
+    private var locationRequestFlow = LocationRequestFlow.NONE
 
     private val mapReadyCallback = OnMapReadyCallback { map ->
         Timber.d("Google map is ready")
@@ -187,8 +190,8 @@ class SelectLocationFragment : BaseFragment() {
         else -> super.onOptionsItemSelected(item)
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
         checkPermissionsAndStartShowingLocationOnMap()
     }
 
@@ -198,16 +201,29 @@ class SelectLocationFragment : BaseFragment() {
     }
 
     /*
- *  When we get the result from asking the user to turn on device location, we call
- *  checkDeviceLocationSettingsAndStartShowingLocationOnMap() again to make sure it's actually on, but
- *  we don't resolve the check to keep the user from seeing an endless loop.
- */
+    *  When we get the result from asking the user to turn on device location, we call
+    *  checkDeviceLocationSettingsAndStartShowingLocationOnMap() again to make sure it's actually on, but
+    *  we don't resolve the check to keep the user from seeing an endless loop.
+    */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             // We don't rely on the result code, but just check the location setting again
             TURN_DEVICE_LOCATION_ON_REQUEST_CODE -> {
                 Timber.d("onActivityResult() resulted REQUEST_TURN_DEVICE_LOCATION_ON")
+                locationRequestFlow = LocationRequestFlow.NONE
+                checkDeviceLocationSettingsAndStartShowingLocationOnMap()
+            }
+            GRANT_LOCATION_PERMISSIONS_APP_DETAILS_SETTINGS_REQUEST_CODE -> {
+                Timber.d("""onActivityResult() resulted 
+                    |GRANT_LOCATION_PERMISSIONS_ON_APP_DETAILS_SETTINGS_REQUEST_CODE""".trimMargin())
+                locationRequestFlow = LocationRequestFlow.NONE
+                checkPermissionsAndStartShowingLocationOnMap()
+            }
+            TURN_DEVICE_LOCATION_ON_LOCATION_SOURCE_SETTINGS_REQUEST_CODE -> {
+                Timber.d("""onActivityResult() resulted 
+                    |TURN_DEVICE_LOCATION_ON_LOCATION_SOURCE_SETTINGS_REQUEST_CODE""".trimMargin())
+                locationRequestFlow = LocationRequestFlow.NONE
                 checkDeviceLocationSettingsAndStartShowingLocationOnMap()
             }
         }
@@ -230,28 +246,44 @@ class SelectLocationFragment : BaseFragment() {
             },
             permissions.joinToString(prefix = "[", postfix = "]")
         )
-        grantResults.isLocationPermissionsGranted(requestCode)
-            .takeIf { it }?.run {
-                Timber.d("Location permission was granted")
-                checkDeviceLocationSettingsAndStartShowingLocationOnMap()
-            } ?: run {
-            Timber.d("Location permission was denied")
-            Snackbar.make(
-                binding.selectLocationRootLayout,
-                getString(R.string.permission_denied_explanation),
-                Snackbar.LENGTH_INDEFINITE
-            ).setAction(R.string.settings) {
-                startActivity(
-                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts(
-                            "package",
-                            BuildConfig.APPLICATION_ID,
-                            null
-                        )
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        when(requestCode) {
+            FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE,
+            FOREGROUND_AND_BACKGROUND_PERMISSION_REQUEST_CODE -> {
+                locationRequestFlow.takeIf { it == LocationRequestFlow.REQUESTING_PERMISSIONS }
+                    ?.run {
+                        locationRequestFlow = LocationRequestFlow.NONE
+                        grantResults.isLocationPermissionsGranted(requestCode).takeIf { it }
+                            ?.run {
+                                Timber.d("Location permission was granted")
+                                checkDeviceLocationSettingsAndStartShowingLocationOnMap()
+                            } ?: run {
+                                Timber.d("Location permission was denied")
+                                Snackbar.make(
+                                    binding.selectLocationRootLayout,
+                                    getString(R.string.permission_denied_explanation),
+                                    Snackbar.LENGTH_INDEFINITE
+                                ).setAction(R.string.settings) {
+                                    locationRequestFlow = LocationRequestFlow.REQUESTING_PERMISSIONS
+                                    startActivityForResult(
+                                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                            data = Uri.fromParts(
+                                                "package",
+                                                BuildConfig.APPLICATION_ID,
+                                                null
+                                            )
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                        },
+                                        GRANT_LOCATION_PERMISSIONS_APP_DETAILS_SETTINGS_REQUEST_CODE
+                                    )
+                                }.show()
+                        }
+                    } ?: run {
+                        Timber.d("""isLocationPermissionsGranted() check not executed. 
+                            |Reason: requestCode was FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE or 
+                            |FOREGROUND_AND_BACKGROUND_PERMISSION_REQUEST_CODE but 
+                            |LocationRequestFlow wasn't REQUESTING_PERMISSIONS""".trimMargin())
                     }
-                )
-            }.show()
+            }
         }
     }
 
@@ -292,56 +324,66 @@ class SelectLocationFragment : BaseFragment() {
      *  the opportunity to turn on location services within our app.
      */
     private fun checkDeviceLocationSettingsAndStartShowingLocationOnMap(resolve: Boolean = true) {
-        activity?.let { fragmentActivity ->
-            createOrGetLocationRequest().let {
-                LocationSettingsRequest.Builder()
-                    .addLocationRequest(it)
-                    .build()
-            }.run {
-                LocationServices.getSettingsClient(fragmentActivity)
-                    .checkLocationSettings(this).apply {
-                        addOnFailureListener { exception ->
-                            Timber.d("Failed to check location settings")
-                            if (exception is ResolvableApiException && resolve) {
-                                Timber.d("Check location settings failure is resolvable")
-                                try {
-                                    exception.startResolutionForResult(
-                                        fragmentActivity,
-                                        TURN_DEVICE_LOCATION_ON_REQUEST_CODE
-                                    )
-                                } catch (sendException: IntentSender.SendIntentException) {
-                                    Timber.e(
-                                        sendException,
-                                        "Error getting location settings resolution"
-                                    )
-                                    Snackbar.make(
-                                        binding.selectLocationRootLayout,
-                                        R.string.fail_to_check_device_location_settings,
-                                        Snackbar.LENGTH_INDEFINITE
-                                    ).setAction(R.string.let_user_try_to_fix) {
-                                        startActivity(
-                                            Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                                        )
-                                    }.show()
+        locationRequestFlow.takeUnless { it == LocationRequestFlow.REQUESTING_DEVICE_LOCATION_ON }
+            ?.run {
+                activity?.let { fragmentActivity ->
+                    createOrGetLocationRequest().let {
+                        LocationSettingsRequest.Builder()
+                            .addLocationRequest(it)
+                            .build()
+                    }.run {
+                        locationRequestFlow = LocationRequestFlow.REQUESTING_DEVICE_LOCATION_ON
+                        LocationServices.getSettingsClient(fragmentActivity)
+                            .checkLocationSettings(this).apply {
+                                addOnFailureListener { exception ->
+                                    Timber.d("Failed to check location settings")
+                                    if (exception is ResolvableApiException && resolve) {
+                                        Timber.d("Check location settings failure is resolvable")
+                                        try {
+                                            exception.startResolutionForResult(
+                                                fragmentActivity,
+                                                TURN_DEVICE_LOCATION_ON_REQUEST_CODE
+                                            )
+                                        } catch (sendException: IntentSender.SendIntentException) {
+                                            Timber.e(
+                                                sendException,
+                                                "Error getting location settings resolution"
+                                            )
+                                            Snackbar.make(
+                                                binding.selectLocationRootLayout,
+                                                R.string.fail_to_check_device_location_settings,
+                                                Snackbar.LENGTH_INDEFINITE
+                                            ).setAction(R.string.let_user_try_to_fix) {
+                                                startActivityForResult(
+                                                    Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS),
+                                                    TURN_DEVICE_LOCATION_ON_LOCATION_SOURCE_SETTINGS_REQUEST_CODE
+                                                )
+                                            }.show()
+                                        }
+                                    } else {
+                                        Timber.d("Check location settings failure couldn't be resolved")
+                                        locationRequestFlow = LocationRequestFlow.NONE
+                                        Snackbar.make(
+                                            binding.selectLocationRootLayout,
+                                            R.string.location_required_error,
+                                            Snackbar.LENGTH_INDEFINITE
+                                        ).setAction(R.string.try_again) {
+                                            checkDeviceLocationSettingsAndStartShowingLocationOnMap()
+                                        }.show()
+                                    }
                                 }
-                            } else {
-                                Timber.d("Check location settings failure couldn't be resolved")
-                                Snackbar.make(
-                                    binding.selectLocationRootLayout,
-                                    R.string.location_required_error,
-                                    Snackbar.LENGTH_INDEFINITE
-                                ).setAction(R.string.try_again) {
-                                    checkDeviceLocationSettingsAndStartShowingLocationOnMap()
-                                }.show()
+                                addOnSuccessListener {
+                                    Timber.d("Succeed to check location settings")
+                                    locationRequestFlow = LocationRequestFlow.NONE
+                                    getCurrentDeviceLocation()
+                                }
                             }
-                        }
-                        addOnSuccessListener {
-                            Timber.d("Succeed to check location settings")
-                            getCurrentDeviceLocation()
-                        }
                     }
+                }
+            } ?: run {
+                Timber.d("""checkLocationSettings() not executed. 
+                            |Reason: LocationRequestFlow was already REQUESTING_DEVICE_LOCATION_ON""".trimMargin())
             }
-        }
     }
 
     private fun createOrGetLocationRequest(): LocationRequest =
@@ -357,7 +399,18 @@ class SelectLocationFragment : BaseFragment() {
     private fun checkAndRequestForegroundAndBackgroundLocationPermissionsIfNeeded() {
         if (foregroundAndBackgroundLocationPermissionApproved())
             return
-        activity?.requestForegroundAndBackgroundLocationPermissions(runningQOrLater)
+        locationRequestFlow.takeUnless {
+            (it == LocationRequestFlow.REQUESTING_PERMISSIONS) or
+                    (it == LocationRequestFlow.REQUESTING_DEVICE_LOCATION_ON)
+        }?.run {
+            Timber.d("Requesting location permissions")
+            locationRequestFlow = LocationRequestFlow.REQUESTING_PERMISSIONS
+            requestForegroundAndBackgroundLocationPermissions(runningQOrLater)
+        } ?: run {
+            Timber.d("""requestForegroundAndBackgroundLocationPermissions() not executed. 
+                        |Reason: LocationRequestFlow was already REQUESTING_PERMISSIONS 
+                        |or REQUESTING_DEVICE_LOCATION_ON""".trimMargin())
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -368,7 +421,7 @@ class SelectLocationFragment : BaseFragment() {
             fusedLocationProviderClient.lastLocation.addOnSuccessListener {
                 Timber.d("Succeed to get last location")
                 // Also checks accuracy/time of the last known location
-                if (it != null) {
+                if (it != null && it.checkForMostNewerAndAccurateLocation()) {
                     Timber.d("Last location was satisfied")
                     currentLocation = it
                     showCurrentDeviceLocationOnMap()
@@ -380,16 +433,44 @@ class SelectLocationFragment : BaseFragment() {
         }
     }
 
+    private fun Location.checkForMostNewerAndAccurateLocation(): Boolean {
+        val timeDeltaComparedToSystemBoot = SystemClock.elapsedRealtimeNanos() - elapsedRealtimeNanos
+        val isSignificantlyNewer = timeDeltaComparedToSystemBoot > TWO_MINUTES
+        val isSignificantlyOlder = timeDeltaComparedToSystemBoot < -TWO_MINUTES
+        val isNewer = timeDeltaComparedToSystemBoot > 0
+
+        isSignificantlyNewer.takeIf { it }?.run { return true }
+        isSignificantlyOlder.takeIf { it }?.run { return false }
+
+        val isSignificantlyLessAccurate = accuracy > 200
+        takeIf { isNewer and !isSignificantlyLessAccurate }?.run { return true }
+        return false
+    }
+
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
-        if (::fusedLocationProviderClient.isInitialized) {
-            Timber.d("Requesting location updates")
-            fusedLocationProviderClient.requestLocationUpdates(
-                createOrGetLocationRequest(),
-                createOrGetLocationCallback(),
-                Looper.getMainLooper()
-            )
-        }
+        locationRequestFlow.takeUnless { it == LocationRequestFlow.REQUESTING_LOCATION_UPDATE }
+            ?.run {
+                if (::fusedLocationProviderClient.isInitialized) {
+                    Timber.d("Requesting location updates")
+                    fusedLocationProviderClient.requestLocationUpdates(
+                        createOrGetLocationRequest(),
+                        createOrGetLocationCallback(),
+                        Looper.getMainLooper()
+                    ).apply {
+                        addOnSuccessListener {
+                            locationRequestFlow = LocationRequestFlow.REQUESTING_LOCATION_UPDATE
+                        }
+                        addOnFailureListener {
+                            Timber.e(it, "Failed to request location updates")
+                            locationRequestFlow = LocationRequestFlow.PENDING_REQUEST_LOCATION_UPDATES
+                        }
+                    }
+                }
+            } ?: run {
+                Timber.d("""startLocationUpdates() not executed. 
+                        |Reason: LocationRequestFlow was already REQUESTING_LOCATION_UPDATE""".trimMargin())
+            }
     }
 
     private fun createOrGetLocationCallback(): LocationCallback =
@@ -401,37 +482,56 @@ class SelectLocationFragment : BaseFragment() {
                     currentLocation = locationResult.lastLocation
                     showCurrentDeviceLocationOnMap()
                 } else {
-                    Timber.d("No Last location get from location updates")
+                    Timber.d("No Last location known from location updates")
                 }
             }
         }.also { locationCallback = it }
 
     private fun stopLocationUpdates() {
-        if (locationCallback != null) {
-            Timber.d("Stopping requesting location updates")
-            fusedLocationProviderClient.removeLocationUpdates(locationCallback)
-            locationCallback = null
-        }
+        locationRequestFlow.takeIf { it == LocationRequestFlow.REQUESTING_LOCATION_UPDATE }
+            ?.run {
+                Timber.d("Stopping requesting location updates")
+                fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+                    .apply {
+                        addOnCompleteListener {
+                            locationRequestFlow = LocationRequestFlow.NONE
+                            locationCallback = null
+                            it.takeUnless { it.isSuccessful }?.run {
+                                Timber.e(it.exception, "Failed to remove location updates")
+                                locationRequestFlow = LocationRequestFlow.PENDING_REMOVE_LOCATION_UPDATES
+                            }
+                        }
+                    }
+            } ?: run {
+                Timber.d("""stopLocationUpdates() not executed. 
+                    |Reason: LocationRequestFlow wasn't REQUESTING_LOCATION_UPDATE""".trimMargin())
+            }
     }
 
     @SuppressLint("MissingPermission")
     private fun showCurrentDeviceLocationOnMap() {
-        if (::googleMap.isInitialized) {
-            Timber.d("Google map is initialized")
+        if (::googleMap.isInitialized && ::currentLocation.isInitialized) {
+            Timber.d("Google Maps and device location were initialized")
             googleMap.apply {
                 isMyLocationEnabled = true
-                if (::currentLocation.isInitialized) {
-                    Timber.d("Current location is initialized")
-                    currentLocation.toLatLng().let { latLng ->
-                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                            latLng,
-                            16F
-                        ))
-                        latLng.showInMap()
-                    }
-                    binding.selectLocationFab.setOnClickListener { onSelectLocationClicked() }
+                currentLocation.toLatLng().let { latLng ->
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                        latLng,
+                        16F
+                    ))
+                    latLng.showInMap()
                 }
+                binding.selectLocationFab.setOnClickListener { onSelectLocationClicked() }
                 this@SelectLocationFragment.activity?.invalidateOptionsMenu()
+            }
+        } else {
+            when {
+                !::googleMap.isInitialized && !::currentLocation.isInitialized ->
+                    Timber.d("Both Google Maps and device location weren't initialized")
+                !::googleMap.isInitialized ->
+                    Timber.d("Google Maps wasn't initialized")
+                !::currentLocation.isInitialized ->
+                    Timber.d("Device location wasn't initialized")
             }
         }
     }
