@@ -76,7 +76,7 @@ dependencies {
     implementation "com.google.android.material:material:$materialVersion"
 
     // Play Services dependencies
-    implementation "com.google.android.gms:play-services-location:$playServicesVersion"
+    implementation "com.google.android.gms:play-services-location:$playServicesLocationVersion"
     implementation "com.google.android.gms:play-services-maps:$playServicesVersion"
 
     // Firebase dependencies
